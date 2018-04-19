@@ -1,0 +1,96 @@
+#include <pololu/orangutan.h>
+
+/*
+ * lcd1: for the Orangutan LV, SV, SVP, X2, and 3pi robot.
+ *
+ * Uses the OrangutanLCD library to display things on the LCD.
+ * It will run on the Baby Orangutan, but it won't display
+ * anything unless you connect an external LCD in a way that
+ * matches the LCD pin connections on the Orangutan LV or SV.
+ *
+ * http://www.pololu.com/docs/0J20
+ * http://www.pololu.com
+ * http://forum.pololu.com
+ */
+
+enum STATE{
+	RECT,
+	CIRCLE,
+};
+
+const char beep_button[] PROGMEM = "!c32";
+enum STATE state = RECT;
+
+void next_state(){
+	switch(state){
+		case RECT:
+			state=CIRCLE;
+			break;
+		case CIRCLE:
+			state=RECT;
+			break;
+	};
+};
+
+enum STATE mode(){
+	if(button_is_pressed(ANY_BUTTON)){
+		next_state();
+		play_from_program_space(beep_button);
+	};
+	while(button_is_pressed(ANY_BUTTON));
+	return state;
+}
+
+void straight(int speed, int time){
+	set_motors(speed,speed);
+	delay_ms(time);
+	set_motors(0,0);
+}
+
+void turn_right(){
+	set_motors(25,-25);
+	delay_ms(700);
+	set_motors(0,0);
+}
+
+enum RECT_STATE {
+	STRAIGHT,
+	TURN,	
+};
+
+void draw_rect(){
+	static enum RECT_STATE state=STRAIGHT;
+	static int speed = 25;
+	static int time = 600;
+	switch(state){
+		case STRAIGHT:
+			straight(speed,time);
+			state = TURN;
+			break;
+		case TURN:
+			turn_right();
+			state = STRAIGHT;
+			break;	
+	};
+}
+
+void draw_circle(){
+	set_motors(35,10);
+}
+
+int main()
+{
+  while(1)
+  {
+    switch(mode()){
+		case RECT:
+			draw_rect();
+			break;
+		case CIRCLE:
+			draw_circle();
+			break;
+	}
+	delay_ms(100);
+  }
+}
+
