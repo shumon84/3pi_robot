@@ -1,0 +1,61 @@
+#include <pololu/orangutan.h>
+
+/*
+ * lcd1: for the Orangutan LV, SV, SVP, X2, and 3pi robot.
+ *
+ * Uses the OrangutanLCD library to display things on the LCD.
+ * It will run on the Baby Orangutan, but it won't display
+ * anything unless you connect an external LCD in a way that
+ * matches the LCD pin connections on the Orangutan LV or SV.
+ *
+ * http://www.pololu.com/docs/0J20
+ * http://www.pololu.com
+ * http://forum.pololu.com
+ */
+
+enum STATE{
+	NAME,
+	BATTERY,
+};
+
+const char beep_button[] PROGMEM = "!c32";
+enum STATE state = BATTERY;
+
+void next_state(){
+	switch(state){
+		case NAME:
+			state=BATTERY;
+			break;
+		case BATTERY:
+			state=NAME;
+			break;
+	};
+};
+
+enum STATE mode(){
+	if(button_is_pressed(ANY_BUTTON)){
+		next_state();
+		play_from_program_space(beep_button);
+	};
+	while(button_is_pressed(ANY_BUTTON));
+	return state;
+}
+
+int main()
+{
+  while(1)
+  {
+    switch(mode()){
+		case NAME:
+			print("S.FUJITA");           // display "Hello" at (0, 0), a.k.a. upper-left
+			break;
+		case BATTERY:
+			print_long(read_battery_millivolts());
+			print("mV");
+			break;
+	}
+	delay_ms(100);
+	clear();                  // clear the LCD
+  }
+}
+
